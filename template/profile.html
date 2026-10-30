@@ -1,76 +1,142 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ profile.name }} | QR Identity</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-</head>
-<body>
-    <header class="navbar">
-        <a href="{{ url_for('index') }}" class="brand">QR<span>Identity</span></a>
-        <a href="{{ url_for('index') }}" class="text-link">← All Profiles</a>
-    </header>
+{% extends "base.html" %}
 
-    <main class="profile-container">
-        <section class="profile-top">
-            <div class="profile-main">
-                {% if profile.photo %}
-                    <img class="profile-photo"
-                         src="{{ url_for('static', filename=profile.photo) }}"
-                         alt="{{ profile.name }}">
-                {% else %}
-                    <div class="profile-photo-placeholder">QR</div>
-                {% endif %}
+{% block title %}{{ profile.name }} | UniversalQR Digital Identity{% endblock %}
 
-                <span class="category">{{ profile.category }}</span>
-                <h1>{{ profile.name }}</h1>
-                <p>{{ profile.description or 'Digital identity profile' }}</p>
+{% block content %}
+<div class="profile-view-layout">
+    <div class="identity-card-wrapper">
+        <!-- Digital ID Card Header -->
+        <div class="identity-card-header">
+            <div class="identity-brand-logo">
+                <div class="brand-logo-icon" style="width:30px; height:30px;">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                </div>
+                <span>Universal<strong>QR</strong> Identity System</span>
             </div>
-
-            <div class="qr-card">
-                <h3>Unique QR Code</h3>
-                <img class="qr-image"
-                     src="{{ url_for('static', filename=profile.qr_code) }}"
-                     alt="QR code for {{ profile.name }}">
-                <p>Scan to open this digital profile.</p>
-                <a class="btn" href="{{ url_for('static', filename=profile.qr_code) }}"
-                   download="profile-qr.png">Download QR Code</a>
+            <div class="identity-status-pill">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                OFFICIAL VERIFIED IDENTITY
             </div>
-        </section>
-
-        <section class="details-card">
-            <h2>Profile Information</h2>
-
-            <div class="detail-row">
-                <span>Profile ID</span>
-                <span class="profile-id">{{ profile.id }}</span>
-            </div>
-
-            <div class="detail-row">
-                <span>Category</span>
-                <strong>{{ profile.category }}</strong>
-            </div>
-
-            {% for field in profile.custom_fields %}
-            <div class="detail-row">
-                <span>{{ field.name }}</span>
-                <strong>{{ field.value }}</strong>
-            </div>
-            {% endfor %}
-
-            <div class="detail-row">
-                <span>Created</span>
-                <strong>{{ profile.created_at }}</strong>
-            </div>
-        </section>
-
-        <div class="profile-actions">
-            <a href="{{ url_for('create_profile') }}" class="btn">+ Create Another Profile</a>
-            <a href="{{ url_for('index') }}" class="btn btn-light">Back to Home</a>
         </div>
-    </main>
 
-    <footer>Universal QR Identity System</footer>
-</body>
-</html>
+        <!-- Main Body: Entity Details + QR Code Pane -->
+        <div class="identity-card-main">
+            <div class="identity-info-pane">
+                <div class="identity-entity-summary">
+                    <div class="entity-avatar-box">
+                        {% if profile.photo %}
+                            <img class="entity-photo" src="{{ url_for('static', filename=profile.photo) }}" alt="{{ profile.name }}">
+                        {% else %}
+                            <div class="entity-photo-placeholder">
+                                <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="entity-titles">
+                        <span class="entity-category-badge">{{ profile.category }}</span>
+                        <h1>{{ profile.name }}</h1>
+                        <p class="entity-description">{{ profile.description or 'Official UniversalQR Digital Identity Profile.' }}</p>
+                    </div>
+                </div>
+
+                <!-- Custom Fields Attributes Table -->
+                <div class="custom-data-section">
+                    <h3>Verified Profile Information</h3>
+                    <div class="data-table-grid">
+                        <div class="data-table-row">
+                            <span class="data-key">Entity ID</span>
+                            <span class="data-val" style="font-family: var(--font-mono); font-size:12px;">{{ profile.id }}</span>
+                        </div>
+                        <div class="data-table-row">
+                            <span class="data-key">Classification</span>
+                            <span class="data-val">{{ profile.category }}</span>
+                        </div>
+
+                        {% for field in profile.custom_fields %}
+                            <div class="data-table-row">
+                                <span class="data-key">{{ field.name }}</span>
+                                <span class="data-val">{{ field.value }}</span>
+                            </div>
+                        {% endfor %}
+
+                        <div class="data-table-row">
+                            <span class="data-key">Registration Date</span>
+                            <span class="data-val">{{ profile.created_at }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: Interactive QR Code Card -->
+            <div class="identity-qr-pane">
+                <h3>Universal QR Code</h3>
+                <p>Scan with any mobile camera or Google Lens to view this digital profile.</p>
+
+                <div class="qr-image-frame">
+                    <img src="{{ url_for('static', filename=profile.qr_code) }}" alt="QR Code for {{ profile.name }}">
+                </div>
+
+                <span class="qr-scan-badge">PUBLIC VERIFIED PROFILE</span>
+
+                <div class="qr-actions-flex">
+                    <a href="{{ url_for('static', filename=profile.qr_code) }}" download="{{ profile.name|replace(' ', '_') }}_QR.png" class="btn btn-primary btn-sm">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                        Download QR (PNG)
+                    </a>
+                    <button type="button" onclick="window.print()" class="btn btn-secondary btn-sm">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+                        Print Digital ID Card
+                    </button>
+                    <button type="button" onclick="shareProfile()" class="btn btn-light btn-sm">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
+                        Share Identity Link
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer actions & metadata -->
+        <div class="identity-card-footer">
+            <div>
+                <span>Powered by <strong>UniversalQR System</strong> · Encrypted & Publicly Auditable</span>
+            </div>
+            <div style="display:flex; gap:10px; align-items:center;">
+                {% if current_user and current_user.id == profile.user_id %}
+                    <a href="{{ url_for('edit_profile', profile_id=profile.id) }}" class="btn btn-secondary btn-sm">
+                        Edit This Profile
+                    </a>
+                    <a href="{{ url_for('index') }}" class="btn btn-light btn-sm">
+                        ← Dashboard
+                    </a>
+                {% else %}
+                    <a href="{{ url_for('scan_qr') }}" class="btn btn-light btn-sm">
+                        Scan Another QR
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    function shareProfile() {
+        const url = window.location.href;
+        if (navigator.share) {
+            navigator.share({
+                title: '{{ profile.name }} | UniversalQR',
+                text: 'View Universal QR Digital Profile for {{ profile.name }}',
+                url: url
+            }).catch(() => {});
+        } else {
+            navigator.clipboard.writeText(url).then(() => {
+                alert('Profile URL copied to clipboard: ' + url);
+            }).catch(() => {
+                prompt('Copy Profile URL:', url);
+            });
+        }
+    }
+</script>
+{% endblock %}

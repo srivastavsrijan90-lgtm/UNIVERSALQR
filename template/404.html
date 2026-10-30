@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block title %}404 - Profile Not Found | UniversalQR{% endblock %}
+
+{% block content %}
+<div class="empty-state" style="max-width: 580px; margin: 40px auto; padding: 50px 30px;">
+    <div class="empty-state-icon" style="background: var(--warning-light); color: var(--warning-dark);">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+    </div>
+    <h2>Profile or Page Not Found</h2>
+    <p>The requested QR identity profile does not exist, has been removed, or the link is invalid.</p>
+    <div style="display:flex; justify-content:center; gap:12px;">
+        <a href="{{ url_for('index') }}" class="btn btn-primary">Return to Dashboard</a>
+        <a href="{{ url_for('scan_qr') }}" class="btn btn-secondary">Scan Another QR</a>
+    </div>
+</div>
+{% endblock %}

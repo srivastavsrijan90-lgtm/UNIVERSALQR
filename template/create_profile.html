@@ -1,102 +1,231 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Create Profile | QR Identity</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-</head>
-<body>
-    <header class="navbar">
-        <a href="{{ url_for('index') }}" class="brand">QR<span>Identity</span></a>
-        <a href="{{ url_for('index') }}" class="text-link">← Back Home</a>
-    </header>
+{% extends "base.html" %}
 
-    <main class="form-container">
-        <div class="page-intro">
-            <p class="eyebrow">CREATE A NEW IDENTITY</p>
-            <h1>Build a <span>digital profile.</span></h1>
-            <p>Enter the details below. Your QR code will be generated automatically.</p>
+{% block title %}Create QR Digital Profile | UniversalQR{% endblock %}
+
+{% block content %}
+<div class="form-page-container">
+    <div class="form-header-intro">
+        <span class="eyebrow">DIGITAL IDENTITY CREATION</span>
+        <h1>Create a New <span>QR Identity</span></h1>
+        <p>Enter the details below. A unique, high-resolution QR code linking to this profile will be generated automatically.</p>
+    </div>
+
+    <form method="POST" enctype="multipart/form-data" class="form-card" id="profileForm">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <input type="hidden" name="camera_photo" id="cameraPhotoData">
+
+        <div class="form-group">
+            <label for="name">Entity Name / Title *</label>
+            <input type="text" id="name" name="name" placeholder="e.g. Rahul Sharma, Mango Tree #4, Tesla Model 3, Max (Dog)" required autofocus>
+            <p class="form-hint">The main identifier displayed at the top of the identity profile.</p>
         </div>
 
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% for category, message in messages %}
-                <div class="alert {{ category }}">{{ message }}</div>
-            {% endfor %}
-        {% endwith %}
-
-        <form method="POST" enctype="multipart/form-data" class="form-card">
-            <label for="name">Name / Title *</label>
-            <input id="name" name="name" type="text"
-                   placeholder="e.g. Mango Tree, Bruno, My Vehicle" required>
-
+        <div class="form-group">
             <label for="category">Category *</label>
             <select id="category" name="category" required>
-                <option value="">Choose a category</option>
-                <option>Human</option>
-                <option>Animal</option>
-                <option>Tree / Plant</option>
-                <option>Vehicle</option>
-                <option>Object / Machine</option>
-                <option>Other</option>
+                <option value="">Select a category...</option>
+                <option value="Human">Human (Personal / Employee / Medical / Emergency)</option>
+                <option value="Animal">Animal / Pet (Dog, Cat, Cattle, Wildlife)</option>
+                <option value="Tree / Plant">Tree / Plant (Flora, Botanical, Garden, Forest)</option>
+                <option value="Vehicle">Vehicle (Car, Bike, Truck, Fleet Asset)</option>
+                <option value="Object">Object / Machine (Product, Equipment, Electronics, Inventory)</option>
+                <option value="Other">Other / Custom Entity</option>
             </select>
+        </div>
 
-            <label for="description">Short Description</label>
-            <textarea id="description" name="description" rows="3"
-                      placeholder="Describe this identity..."></textarea>
+        <div class="form-group">
+            <label for="description">Profile Description</label>
+            <textarea id="description" name="description" rows="3" placeholder="Provide a brief overview, emergency contacts, specifications, or details..."></textarea>
+        </div>
 
-            <label for="photo">Profile Photo</label>
-            <input id="photo" name="photo" type="file"
-                   accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp">
-            <p class="help-text">Optional. PNG, JPG, JPEG or WEBP.</p>
-
-            <div class="field-section">
-                <div class="field-header">
-                    <div>
-                        <h3>Custom Information</h3>
-                        <p>Add details specific to this profile.</p>
-                    </div>
-                    <button type="button" id="add-field" class="btn btn-light">+ Add Field</button>
+        <!-- Photo Selection: Upload File OR Live Camera -->
+        <div class="form-group">
+            <label>Profile Photo / Visual Identifier</label>
+            <div class="photo-capture-wrapper">
+                <div class="capture-tabs">
+                    <button type="button" class="capture-tab-btn active" id="tabUploadBtn" onclick="switchPhotoTab('upload')">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                        Upload Image File
+                    </button>
+                    <button type="button" class="capture-tab-btn" id="tabCameraBtn" onclick="switchPhotoTab('camera')">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+                        Capture from Camera
+                    </button>
                 </div>
 
-                <div id="custom-fields"></div>
+                <div id="uploadPane">
+                    <input type="file" id="photoInput" name="photo" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp">
+                    <p class="form-hint">Accepted formats: PNG, JPG, JPEG, WEBP (Max 16 MB).</p>
+                </div>
+
+                <div id="cameraPane" class="camera-preview-box">
+                    <video id="cameraStream" autoplay playsinline></video>
+                    <canvas id="cameraCanvas"></canvas>
+                    <div style="display:flex; gap:10px; align-items:center;">
+                        <button type="button" class="btn btn-secondary btn-sm" id="snapPhotoBtn" onclick="snapCameraPhoto()">
+                            Take Snapshot
+                        </button>
+                        <button type="button" class="btn btn-light btn-sm" id="retakePhotoBtn" style="display:none;" onclick="retakeCameraPhoto()">
+                            Retake
+                        </button>
+                    </div>
+                    <img id="capturedPreview" class="captured-thumbnail-preview" alt="Captured snapshot preview">
+                    <p class="form-hint" id="cameraStatusText">Camera is ready. Click "Take Snapshot" to capture.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Custom Information Fields -->
+        <div class="custom-fields-editor">
+            <div class="custom-fields-header">
+                <div>
+                    <h3 style="font-size:16px; font-weight:700; color:var(--slate-900);">Custom Information Fields</h3>
+                    <p class="form-hint" style="margin:0;">Add key-value attributes specific to this entity (e.g. Blood Group, Breed, Registration, Model, Serial No).</p>
+                </div>
+                <button type="button" class="btn btn-light btn-sm" onclick="addCustomField()">
+                    + Add Field
+                </button>
             </div>
 
-            <button type="submit" class="btn submit-btn">Create Profile & Generate QR →</button>
-        </form>
-    </main>
+            <div id="customFieldsContainer"></div>
+        </div>
 
-    <script>
-        const fieldsContainer = document.getElementById("custom-fields");
-        const addFieldButton = document.getElementById("add-field");
+        <div style="margin-top: 32px; display:flex; gap:12px;">
+            <button type="submit" class="btn btn-primary btn-lg" style="flex:1;">
+                Generate QR & Create Digital Profile →
+            </button>
+            <a href="{{ url_for('index') }}" class="btn btn-secondary btn-lg">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
 
-        function addField() {
-            const row = document.createElement("div");
-            row.className = "custom-field-row";
+{% block extra_scripts %}
+<script>
+    // Custom Fields Dynamic Addition
+    const fieldsContainer = document.getElementById("customFieldsContainer");
 
-            const nameInput = document.createElement("input");
-            nameInput.name = "field_name[]";
-            nameInput.placeholder = "Field name (e.g. Owner)";
-            nameInput.maxLength = 100;
+    function addCustomField(name = '', value = '') {
+        const row = document.createElement("div");
+        row.className = "custom-field-row";
 
-            const valueInput = document.createElement("input");
-            valueInput.name = "field_value[]";
-            valueInput.placeholder = "Value (e.g. Rahul)";
-            valueInput.maxLength = 1000;
+        const nameInput = document.createElement("input");
+        nameInput.type = "text";
+        nameInput.name = "field_name[]";
+        nameInput.placeholder = "Field Label (e.g. Emergency Contact)";
+        nameInput.maxLength = 100;
+        nameInput.value = name;
+        nameInput.required = true;
 
-            const removeButton = document.createElement("button");
-            removeButton.type = "button";
-            removeButton.className = "remove-field";
-            removeButton.textContent = "×";
-            removeButton.setAttribute("aria-label", "Remove field");
-            removeButton.addEventListener("click", () => row.remove());
+        const valueInput = document.createElement("input");
+        valueInput.type = "text";
+        valueInput.name = "field_value[]";
+        valueInput.placeholder = "Value (e.g. +91 9876543210)";
+        valueInput.maxLength = 1000;
+        valueInput.value = value;
+        valueInput.required = true;
 
-            row.append(nameInput, valueInput, removeButton);
-            fieldsContainer.appendChild(row);
+        const removeBtn = document.createElement("button");
+        removeBtn.type = "button";
+        removeBtn.className = "btn-remove-row";
+        removeBtn.innerHTML = "&times;";
+        removeBtn.setAttribute("aria-label", "Remove field");
+        removeBtn.onclick = () => row.remove();
+
+        row.appendChild(nameInput);
+        row.appendChild(valueInput);
+        row.appendChild(removeBtn);
+        fieldsContainer.appendChild(row);
+    }
+
+    // Add default initial field
+    addCustomField("Primary Contact / Owner", "");
+
+    // Camera and Upload Switching
+    let videoStream = null;
+
+    function switchPhotoTab(tab) {
+        const tabUpload = document.getElementById("tabUploadBtn");
+        const tabCamera = document.getElementById("tabCameraBtn");
+        const uploadPane = document.getElementById("uploadPane");
+        const cameraPane = document.getElementById("cameraPane");
+
+        if (tab === 'camera') {
+            tabUpload.classList.remove('active');
+            tabCamera.classList.add('active');
+            uploadPane.style.display = 'none';
+            cameraPane.classList.add('active');
+            startCamera();
+        } else {
+            tabCamera.classList.remove('active');
+            tabUpload.classList.add('active');
+            cameraPane.classList.remove('active');
+            uploadPane.style.display = 'block';
+            stopCamera();
         }
+    }
 
-        addFieldButton.addEventListener("click", addField);
-        addField();
-    </script>
-</body>
-</html>
+    async function startCamera() {
+        const video = document.getElementById("cameraStream");
+        const statusText = document.getElementById("cameraStatusText");
+        try {
+            videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+            video.srcObject = videoStream;
+            statusText.textContent = 'Camera is active. Position entity and click "Take Snapshot".';
+        } catch (err) {
+            statusText.textContent = 'Camera access error: ' + err.message + '. Please use File Upload instead.';
+        }
+    }
+
+    function stopCamera() {
+        if (videoStream) {
+            videoStream.getTracks().forEach(track => track.stop());
+            videoStream = null;
+        }
+    }
+
+    function snapCameraPhoto() {
+        const video = document.getElementById("cameraStream");
+        const canvas = document.getElementById("cameraCanvas");
+        const preview = document.getElementById("capturedPreview");
+        const hiddenData = document.getElementById("cameraPhotoData");
+        const retakeBtn = document.getElementById("retakePhotoBtn");
+        const snapBtn = document.getElementById("snapPhotoBtn");
+        const statusText = document.getElementById("cameraStatusText");
+
+        if (!video.videoWidth) return;
+
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        const dataUrl = canvas.toDataURL("image/png");
+        hiddenData.value = dataUrl;
+        preview.src = dataUrl;
+        preview.style.display = 'block';
+        video.style.display = 'none';
+        snapBtn.style.display = 'none';
+        retakeBtn.style.display = 'inline-block';
+        statusText.textContent = 'Snapshot captured successfully!';
+        stopCamera();
+    }
+
+    function retakeCameraPhoto() {
+        const video = document.getElementById("cameraStream");
+        const preview = document.getElementById("capturedPreview");
+        const hiddenData = document.getElementById("cameraPhotoData");
+        const retakeBtn = document.getElementById("retakePhotoBtn");
+        const snapBtn = document.getElementById("snapPhotoBtn");
+
+        hiddenData.value = '';
+        preview.style.display = 'none';
+        video.style.display = 'block';
+        snapBtn.style.display = 'inline-block';
+        retakeBtn.style.display = 'none';
+        startCamera();
+    }
+
+    window.addEventListener('beforeunload', stopCamera);
+</script>
+{% endblock %}

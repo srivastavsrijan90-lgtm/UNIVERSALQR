@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+
+{% block title %}Scan QR Code | UniversalQR Scanner{% endblock %}
+
+{% block content %}
+<div class="scanner-container">
+    <div class="form-header-intro">
+        <span class="eyebrow">OPTICAL IDENTITY SCANNER</span>
+        <h1>Scan Universal <span>QR Code</span></h1>
+        <p>Point your camera at any UniversalQR identity code or upload an image file to instantly retrieve its digital profile.</p>
+    </div>
+
+    <div class="scanner-viewfinder-card">
+        <div class="capture-tabs" style="justify-content: center; margin-bottom: 20px;">
+            <button type="button" class="capture-tab-btn active" id="scanCameraTab" onclick="setScanMode('camera')">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+                Use Live Camera
+            </button>
+            <button type="button" class="capture-tab-btn" id="scanFileTab" onclick="setScanMode('file')">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                Upload QR Image
+            </button>
+        </div>
+
+        <!-- Camera Scanner Section -->
+        <div id="cameraScanSection">
+            <div id="qrReader" style="max-width: 480px; margin: 0 auto;"></div>
+            <p id="scannerStatusText" style="margin-top: 14px; font-size: 13px; color: var(--slate-500);">
+                Requesting camera access... Please allow camera permissions.
+            </p>
+        </div>
+
+        <!-- File Upload Scanner Section -->
+        <div id="fileScanSection" style="display: none;">
+            <div style="border: 2px dashed var(--slate-300); border-radius: var(--radius-lg); padding: 40px 20px; background: var(--slate-50);">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--slate-400)" stroke-width="1.5" style="margin-bottom: 12px;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                <h4 style="font-size: 16px; color: var(--slate-800); margin-bottom: 6px;">Select or Drop a QR Code Image</h4>
+                <p style="font-size: 13px; color: var(--slate-500); margin-bottom: 16px;">Supports PNG, JPG, JPEG, WEBP files</p>
+                <input type="file" id="qrFileInput" accept="image/*" class="btn btn-secondary btn-sm" style="margin: 0 auto; display: block;">
+            </div>
+            <p id="fileScanResult" style="margin-top: 14px; font-size: 14px; font-weight: 600;"></p>
+        </div>
+
+        <!-- Manual Lookup Fallback -->
+        <div style="margin-top: 28px; padding-top: 20px; border-top: 1px solid var(--slate-200);">
+            <p style="font-size: 13px; color: var(--slate-500); margin-bottom: 8px;">Or enter Profile UUID directly:</p>
+            <form onsubmit="return handleManualLookup(event)" style="display: flex; gap: 8px; max-width: 400px; margin: 0 auto;">
+                <input type="text" id="manualProfileId" placeholder="e.g. 052c259f-6dd9-43f5..." style="flex:1; padding: 8px 12px; border: 1px solid var(--slate-300); border-radius: var(--radius-md); font-size: 13px;">
+                <button type="submit" class="btn btn-primary btn-sm">Open</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    let html5QrCode = null;
+    let isScanning = false;
+
+    function onScanSuccess(decodedText, decodedResult) {
+        console.log("Decoded QR:", decodedText);
+        document.getElementById("scannerStatusText").innerHTML = `<strong style="color:var(--success);">QR Code Detected!</strong> Redirecting to profile...`;
+        
+        // Handle redirection
+        if (decodedText.startsWith("http://") || decodedText.startsWith("https://")) {
+            window.location.href = decodedText;
+        } else if (decodedText.startsWith("/profile/")) {
+            window.location.href = decodedText;
+        } else {
+            // Assume it's a profile ID
+            window.location.href = "/profile/" + encodeURIComponent(decodedText.trim());
+        }
+
+        if (html5QrCode) {
+            html5QrCode.stop().catch(() => {});
+        }
+    }
+
+    function onScanFailure(error) {
+        // Continuous scan failure messages are normal while searching for QR
+    }
+
+    function startLiveScanner() {
+        if (!document.getElementById("qrReader")) return;
+        
+        html5QrCode = new Html5Qrcode("qrReader");
+        const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+
+        html5QrCode.start(
+            { facingMode: "environment" },
+            config,
+            onScanSuccess,
+            onScanFailure
+        ).then(() => {
+            isScanning = true;
+            document.getElementById("scannerStatusText").textContent = "Camera active. Align QR code within the frame.";
+        }).catch(err => {
+            console.error("Camera start error:", err);
+            document.getElementById("scannerStatusText").innerHTML = `<span style="color:var(--danger);">Camera access error: ${err}. Try uploading a QR image instead.</span>`;
+        });
+    }
+
+    function stopLiveScanner() {
+        if (html5QrCode && isScanning) {
+            html5QrCode.stop().then(() => {
+                isScanning = false;
+            }).catch(() => {});
+        }
+    }
+
+    function setScanMode(mode) {
+        const camTab = document.getElementById("scanCameraTab");
+        const fileTab = document.getElementById("scanFileTab");
+        const camSec = document.getElementById("cameraScanSection");
+        const fileSec = document.getElementById("fileScanSection");
+
+        if (mode === 'camera') {
+            camTab.classList.add('active');
+            fileTab.classList.remove('active');
+            camSec.style.display = 'block';
+            fileSec.style.display = 'none';
+            startLiveScanner();
+        } else {
+            fileTab.classList.add('active');
+            camTab.classList.remove('active');
+            camSec.style.display = 'none';
+            fileSec.style.display = 'block';
+            stopLiveScanner();
+        }
+    }
+
+    // Image File Scanner
+    document.getElementById("qrFileInput").addEventListener("change", function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const resultElem = document.getElementById("fileScanResult");
+        resultElem.style.color = "var(--slate-600)";
+        resultElem.textContent = "Analyzing QR image...";
+
+        const fileQrScanner = new Html5Qrcode("qrReader");
+        fileQrScanner.scanFile(file, true)
+            .then(decodedText => {
+                resultElem.style.color = "var(--success)";
+                resultElem.textContent = "QR Code found: " + decodedText;
+                setTimeout(() => {
+                    onScanSuccess(decodedText, null);
+                }, 600);
+            })
+            .catch(err => {
+                resultElem.style.color = "var(--danger)";
+                resultElem.textContent = "Could not find a valid QR code in this image: " + err;
+            });
+    });
+
+    function handleManualLookup(e) {
+        e.preventDefault();
+        const id = document.getElementById("manualProfileId").value.trim();
+        if (id) {
+            window.location.href = "/profile/" + encodeURIComponent(id);
+        }
+    }
+
+    // Initialize scanner on page load
+    window.addEventListener("DOMContentLoaded", () => {
+        startLiveScanner();
+    });
+
+    window.addEventListener("beforeunload", () => {
+        stopLiveScanner();
+    });
+</script>
+{% endblock %}

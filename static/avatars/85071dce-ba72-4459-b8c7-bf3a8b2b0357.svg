@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <defs>
+    <linearGradient id="grad-85071dce-ba72-4459-b8c7-bf3a8b2b0357" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#E11D48" />
+      <stop offset="100%" stop-color="#FB7185" />
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-opacity="0.25"/>
+    </filter>
+  </defs>
+
+  <!-- Background Circle with Gradient -->
+  <circle cx="100" cy="100" r="92" fill="url(#grad-85071dce-ba72-4459-b8c7-bf3a8b2b0357)" filter="url(#shadow)" />
+  
+  <!-- Subtle Outer Ring -->
+  <circle cx="100" cy="100" r="88" fill="none" stroke="rgba(255, 255, 255, 0.35)" stroke-width="2.5" stroke-dasharray="6 4" />
+  
+  <!-- Tech Accent Pattern -->
+  <circle cx="100" cy="100" r="70" fill="none" stroke="rgba(255, 255, 255, 0.15)" stroke-width="1.5" />
+
+  <!-- Initials Text -->
+  <text x="100" y="112" font-family="'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" 
+        font-size="62" font-weight="800" fill="#ffffff" text-anchor="middle" dominant-baseline="middle" letter-spacing="-1">
+    AU
+  </text>
+
+  <!-- Brand Seal Badge -->
+  <g transform="translate(100, 162)">
+    <rect x="-38" y="-11" width="76" height="19" rx="9.5" fill="rgba(15, 23, 42, 0.75)" stroke="rgba(255, 255, 255, 0.3)" stroke-width="1" />
+    <text x="0" y="3.5" font-family="'Inter', sans-serif" font-size="9" font-weight="700" fill="#ffffff" text-anchor="middle" letter-spacing="1">
+      UQR-97QV28
+    </text>
+  </g>
+</svg>

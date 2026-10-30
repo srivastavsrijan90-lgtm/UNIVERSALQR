@@ -1,144 +1,84 @@
+{% extends "base.html" %}
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UniversalQR | Create Account</title>
+{% block title %}Create UniversalQR Account | Sign Up{% endblock %}
 
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: Arial, sans-serif;
-        }
-
-        body {
-            background: #f0f4f8;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-        }
-
-        .signup-box {
-            background: white;
-            width: 380px;
-            padding: 35px;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            text-align: center;
-        }
-
-        .logo {
-            font-size: 28px;
-            font-weight: bold;
-            color: #2563eb;
-            margin-bottom: 20px;
-        }
-
-        h2 {
-            color: #333;
-            margin-bottom: 10px;
-        }
-
-        .subtitle {
-            color: #777;
-            font-size: 14px;
-            margin-bottom: 25px;
-        }
-
-        input {
-            width: 100%;
-            padding: 13px;
-            margin-bottom: 16px;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-            font-size: 15px;
-            outline: none;
-        }
-
-        input:focus {
-            border-color: #2563eb;
-        }
-
-        button {
-            width: 100%;
-            padding: 13px;
-            background: #2563eb;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: 0.3s;
-        }
-
-        button:hover {
-            background: #1d4ed8;
-        }
-
-        .login-link {
-            margin-top: 22px;
-            font-size: 14px;
-            color: #555;
-        }
-
-        a {
-            color: #2563eb;
-            text-decoration: none;
-            font-weight: bold;
-        }
-
-        a:hover {
-            text-decoration: underline;
-        }
-
-        @media (max-width: 450px) {
-            .signup-box {
-                width: 90%;
-                padding: 25px;
-            }
-        }
-    </style>
-</head>
-
-<body>
-
-    <div class="signup-box">
-
-        <div class="logo">UniversalQR</div>
-
+{% block content %}
+<div class="auth-wrapper">
+    <div class="auth-card">
+        <div class="auth-brand-seal">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+        </div>
         <h2>Create Account</h2>
+        <p class="auth-subtitle">Join UniversalQR & generate your personalized brand identity</p>
 
-        <p class="subtitle">
-            Create your account and explore UniversalQR
-        </p>
+        <form method="POST" action="{{ url_for('signup') }}" class="auth-form" id="signupForm" onsubmit="return validateSignup()">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 
-        <form method="POST">
+            <div class="form-group">
+                <label for="name">Full Name *</label>
+                <input type="text" id="name" name="name" placeholder="e.g. Srijan Srivastava" required autofocus value="{{ request.form.get('name', '') }}">
+            </div>
 
-            <input type="text" name="name"
-                   placeholder="Full Name" required>
+            <div class="form-group">
+                <label for="email">Email Address *</label>
+                <input type="email" id="email" name="email" placeholder="name@example.com" required value="{{ request.form.get('email', '') }}">
+            </div>
 
-            <input type="email" name="email"
-                   placeholder="Email" required>
+            <div class="form-group">
+                <label for="password">Password (min 8 characters) *</label>
+                <div class="password-input-wrap">
+                    <input type="password" id="password" name="password" placeholder="Create a secure password" minlength="8" required>
+                    <button type="button" class="toggle-password-btn" onclick="togglePasswordVisibility('password', this)">Show</button>
+                </div>
+            </div>
 
-            <input type="password" name="password"
-                   placeholder="Password"
-                   minlength="8" required>
+            <div class="form-group">
+                <label for="confirm_password">Confirm Password *</label>
+                <div class="password-input-wrap">
+                    <input type="password" id="confirm_password" name="confirm_password" placeholder="Re-enter password" minlength="8" required>
+                    <button type="button" class="toggle-password-btn" onclick="togglePasswordVisibility('confirm_password', this)">Show</button>
+                </div>
+                <p class="form-hint" id="passwordMatchHint" style="color:var(--danger); display:none;">Passwords do not match.</p>
+            </div>
 
-            <button type="submit">Signup</button>
-
+            <button type="submit" class="btn btn-primary btn-lg" style="width:100%; margin-top:10px;">
+                Create Account & Generate Identity →
+            </button>
         </form>
 
-        <p class="login-link">
-            Already have an account?
-            <a href="/login">Login</a>
+        <p class="auth-footer-link">
+            Already have an account? 
+            <a href="{{ url_for('login') }}" style="font-weight:700;">Sign in here</a>
         </p>
-
     </div>
+</div>
+{% endblock %}
 
-</body>
-</html>
+{% block extra_scripts %}
+<script>
+    function togglePasswordVisibility(inputId, btn) {
+        const input = document.getElementById(inputId);
+        if (input.type === 'password') {
+            input.type = 'text';
+            btn.textContent = 'Hide';
+        } else {
+            input.type = 'password';
+            btn.textContent = 'Show';
+        }
+    }
+
+    function validateSignup() {
+        const p1 = document.getElementById('password').value;
+        const p2 = document.getElementById('confirm_password').value;
+        const hint = document.getElementById('passwordMatchHint');
+        
+        if (p1 !== p2) {
+            hint.style.display = 'block';
+            document.getElementById('confirm_password').focus();
+            return false;
+        }
+        hint.style.display = 'none';
+        return true;
+    }
+</script>
+{% endblock %}

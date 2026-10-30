@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: universal-qr-system
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn wsgi:app
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: FLASK_SECRET_KEY
+        generateValue: true
+      - key: DB_TYPE
+        value: sqlite

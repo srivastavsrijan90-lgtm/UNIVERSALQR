@@ -1,0 +1,244 @@
+{% extends "base.html" %}
+
+{% block title %}Edit {{ profile.name }} | UniversalQR{% endblock %}
+
+{% block content %}
+<div class="form-page-container">
+    <div class="form-header-intro">
+        <span class="eyebrow">EDIT IDENTITY</span>
+        <h1>Edit <span>{{ profile.name }}</span></h1>
+        <p>Update the information below. All changes will be immediately reflected when this QR code is scanned.</p>
+    </div>
+
+    <form method="POST" enctype="multipart/form-data" class="form-card" id="editProfileForm">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <input type="hidden" name="camera_photo" id="cameraPhotoData">
+
+        <div class="form-group">
+            <label for="name">Entity Name / Title *</label>
+            <input type="text" id="name" name="name" value="{{ profile.name }}" required>
+        </div>
+
+        <div class="form-group">
+            <label for="category">Category *</label>
+            <select id="category" name="category" required>
+                <option value="Human" {% if profile.category == 'Human' %}selected{% endif %}>Human (Personal / Employee / Medical / Emergency)</option>
+                <option value="Animal" {% if profile.category == 'Animal' %}selected{% endif %}>Animal / Pet (Dog, Cat, Cattle, Wildlife)</option>
+                <option value="Tree / Plant" {% if profile.category == 'Tree / Plant' %}selected{% endif %}>Tree / Plant (Flora, Botanical, Garden, Forest)</option>
+                <option value="Vehicle" {% if profile.category == 'Vehicle' %}selected{% endif %}>Vehicle (Car, Bike, Truck, Fleet Asset)</option>
+                <option value="Object" {% if profile.category == 'Object' %}selected{% endif %}>Object / Machine (Product, Equipment, Electronics, Inventory)</option>
+                <option value="Other" {% if profile.category == 'Other' %}selected{% endif %}>Other / Custom Entity</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="description">Profile Description</label>
+            <textarea id="description" name="description" rows="3">{{ profile.description or '' }}</textarea>
+        </div>
+
+        <!-- Current Photo & Option to Replace -->
+        <div class="form-group">
+            <label>Profile Photo</label>
+            {% if profile.photo %}
+                <div style="display:flex; align-items:center; gap:16px; margin-bottom:12px; padding:12px; background:var(--slate-50); border-radius:var(--radius-md);">
+                    <img src="{{ url_for('static', filename=profile.photo) }}" alt="{{ profile.name }}" style="width:64px; height:64px; border-radius:var(--radius-md); object-fit:cover;">
+                    <div>
+                        <span style="font-size:13px; font-weight:700; color:var(--slate-800);">Current Photo Active</span>
+                        <p class="form-hint" style="margin:2px 0 0;">Upload a new image or snap a new photo below if you wish to change it.</p>
+                    </div>
+                </div>
+            {% endif %}
+
+            <div class="photo-capture-wrapper">
+                <div class="capture-tabs">
+                    <button type="button" class="capture-tab-btn active" id="tabUploadBtn" onclick="switchPhotoTab('upload')">
+                        Upload Image File
+                    </button>
+                    <button type="button" class="capture-tab-btn" id="tabCameraBtn" onclick="switchPhotoTab('camera')">
+                        Capture from Camera
+                    </button>
+                </div>
+
+                <div id="uploadPane">
+                    <input type="file" id="photoInput" name="photo" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp">
+                    <p class="form-hint">Leave blank to keep existing photo.</p>
+                </div>
+
+                <div id="cameraPane" class="camera-preview-box">
+                    <video id="cameraStream" autoplay playsinline></video>
+                    <canvas id="cameraCanvas"></canvas>
+                    <div style="display:flex; gap:10px; align-items:center;">
+                        <button type="button" class="btn btn-secondary btn-sm" id="snapPhotoBtn" onclick="snapCameraPhoto()">
+                            Take Snapshot
+                        </button>
+                        <button type="button" class="btn btn-light btn-sm" id="retakePhotoBtn" style="display:none;" onclick="retakeCameraPhoto()">
+                            Retake
+                        </button>
+                    </div>
+                    <img id="capturedPreview" class="captured-thumbnail-preview" alt="Captured snapshot preview">
+                    <p class="form-hint" id="cameraStatusText">Camera is ready.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Custom Information Fields -->
+        <div class="custom-fields-editor">
+            <div class="custom-fields-header">
+                <div>
+                    <h3 style="font-size:16px; font-weight:700; color:var(--slate-900);">Custom Information Fields</h3>
+                    <p class="form-hint" style="margin:0;">Modify, add, or remove custom fields.</p>
+                </div>
+                <button type="button" class="btn btn-light btn-sm" onclick="addCustomField()">
+                    + Add Field
+                </button>
+            </div>
+
+            <div id="customFieldsContainer"></div>
+        </div>
+
+        <div style="margin-top: 32px; display:flex; gap:12px;">
+            <button type="submit" class="btn btn-primary btn-lg" style="flex:1;">
+                Save Changes →
+            </button>
+            <a href="{{ url_for('view_profile', profile_id=profile.id) }}" class="btn btn-secondary btn-lg">View Profile</a>
+            <a href="{{ url_for('index') }}" class="btn btn-light btn-lg">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    const fieldsContainer = document.getElementById("customFieldsContainer");
+
+    function addCustomField(name = '', value = '') {
+        const row = document.createElement("div");
+        row.className = "custom-field-row";
+
+        const nameInput = document.createElement("input");
+        nameInput.type = "text";
+        nameInput.name = "field_name[]";
+        nameInput.placeholder = "Field Label";
+        nameInput.maxLength = 100;
+        nameInput.value = name;
+        nameInput.required = true;
+
+        const valueInput = document.createElement("input");
+        valueInput.type = "text";
+        valueInput.name = "field_value[]";
+        valueInput.placeholder = "Value";
+        valueInput.maxLength = 1000;
+        valueInput.value = value;
+        valueInput.required = true;
+
+        const removeBtn = document.createElement("button");
+        removeBtn.type = "button";
+        removeBtn.className = "btn-remove-row";
+        removeBtn.innerHTML = "&times;";
+        removeBtn.setAttribute("aria-label", "Remove field");
+        removeBtn.onclick = () => row.remove();
+
+        row.appendChild(nameInput);
+        row.appendChild(valueInput);
+        row.appendChild(removeBtn);
+        fieldsContainer.appendChild(row);
+    }
+
+    // Populate existing custom fields from backend
+    const existingFields = {{ profile.custom_fields|tojson }};
+    if (existingFields && existingFields.length > 0) {
+        existingFields.forEach(f => {
+            addCustomField(f.name || '', f.value || '');
+        });
+    } else {
+        addCustomField();
+    }
+
+    // Camera handling
+    let videoStream = null;
+
+    function switchPhotoTab(tab) {
+        const tabUpload = document.getElementById("tabUploadBtn");
+        const tabCamera = document.getElementById("tabCameraBtn");
+        const uploadPane = document.getElementById("uploadPane");
+        const cameraPane = document.getElementById("cameraPane");
+
+        if (tab === 'camera') {
+            tabUpload.classList.remove('active');
+            tabCamera.classList.add('active');
+            uploadPane.style.display = 'none';
+            cameraPane.classList.add('active');
+            startCamera();
+        } else {
+            tabCamera.classList.remove('active');
+            tabUpload.classList.add('active');
+            cameraPane.classList.remove('active');
+            uploadPane.style.display = 'block';
+            stopCamera();
+        }
+    }
+
+    async function startCamera() {
+        const video = document.getElementById("cameraStream");
+        const statusText = document.getElementById("cameraStatusText");
+        try {
+            videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+            video.srcObject = videoStream;
+            statusText.textContent = 'Camera is active. Position entity and click "Take Snapshot".';
+        } catch (err) {
+            statusText.textContent = 'Camera access error: ' + err.message + '. Please use File Upload instead.';
+        }
+    }
+
+    function stopCamera() {
+        if (videoStream) {
+            videoStream.getTracks().forEach(track => track.stop());
+            videoStream = null;
+        }
+    }
+
+    function snapCameraPhoto() {
+        const video = document.getElementById("cameraStream");
+        const canvas = document.getElementById("cameraCanvas");
+        const preview = document.getElementById("capturedPreview");
+        const hiddenData = document.getElementById("cameraPhotoData");
+        const retakeBtn = document.getElementById("retakePhotoBtn");
+        const snapBtn = document.getElementById("snapPhotoBtn");
+        const statusText = document.getElementById("cameraStatusText");
+
+        if (!video.videoWidth) return;
+
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        const dataUrl = canvas.toDataURL("image/png");
+        hiddenData.value = dataUrl;
+        preview.src = dataUrl;
+        preview.style.display = 'block';
+        video.style.display = 'none';
+        snapBtn.style.display = 'none';
+        retakeBtn.style.display = 'inline-block';
+        statusText.textContent = 'Snapshot captured!';
+        stopCamera();
+    }
+
+    function retakeCameraPhoto() {
+        const video = document.getElementById("cameraStream");
+        const preview = document.getElementById("capturedPreview");
+        const hiddenData = document.getElementById("cameraPhotoData");
+        const retakeBtn = document.getElementById("retakePhotoBtn");
+        const snapBtn = document.getElementById("snapPhotoBtn");
+
+        hiddenData.value = '';
+        preview.style.display = 'none';
+        video.style.display = 'block';
+        snapBtn.style.display = 'inline-block';
+        retakeBtn.style.display = 'none';
+        startCamera();
+    }
+
+    window.addEventListener('beforeunload', stopCamera);
+</script>
+{% endblock %}

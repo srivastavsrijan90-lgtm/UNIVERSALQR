@@ -1,70 +1,195 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Universal QR Identity</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-</head>
-<body>
-    <header class="navbar">
-        <a href="{{ url_for('index') }}" class="brand">QR<span>Identity</span></a>
-        <a href="{{ url_for('create_profile') }}" class="btn">+ Create Profile</a>
-    </header>
+{% extends "base.html" %}
 
-    <main class="container">
-        <section class="hero">
-            <p class="eyebrow">ONE QR · UNLIMITED POSSIBILITIES</p>
-            <h1>Everything has a <span>digital identity.</span></h1>
-            <p>Create a profile for a person, animal, tree, vehicle or any object.
-               Generate a QR code and access its information with a scan.</p>
-            <a href="{{ url_for('create_profile') }}" class="btn">Create Your First Profile →</a>
-        </section>
+{% block title %}Dashboard | UniversalQR Identity System{% endblock %}
 
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% for category, message in messages %}
-                <div class="alert {{ category }}">{{ message }}</div>
-            {% endfor %}
-        {% endwith %}
-
-        <section class="section-heading">
-            <div>
-                <h2>Your Profiles</h2>
-                <p>All your created digital identities in one place.</p>
-            </div>
-            <span class="count">{{ profiles|length }} profiles</span>
-        </section>
-
-        {% if profiles %}
-        <div class="profile-grid">
-            {% for profile in profiles %}
-            <a class="profile-card" href="{{ url_for('view_profile', profile_id=profile['id']) }}">
-                {% if profile['photo'] %}
-                    <img class="card-photo"
-                         src="{{ url_for('static', filename=profile['photo']) }}"
-                         alt="{{ profile['name'] }}">
-                {% else %}
-                    <div class="card-placeholder">QR</div>
-                {% endif %}
-                <div class="card-content">
-                    <span class="category">{{ profile['category'] }}</span>
-                    <h3>{{ profile['name'] }}</h3>
-                    <p>{{ profile['description'] or 'Digital identity profile' }}</p>
-                    <span class="view-link">View profile →</span>
+{% block content %}
+<!-- Personalized User Dashboard Hero -->
+<section class="dashboard-hero">
+    <div class="hero-main-flex">
+        <div class="user-identity-profile">
+            <div class="hero-avatar-wrap">
+                <img class="hero-avatar" 
+                     src="{{ url_for('static', filename=current_user.avatar) if current_user.avatar else url_for('static', filename='avatars/' + current_user.id + '.svg') }}" 
+                     alt="{{ current_user.name }} Profile Identity">
+                <div class="verified-dot" title="UniversalQR Verified User">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
                 </div>
-            </a>
-            {% endfor %}
+            </div>
+            <div class="hero-text">
+                <h1>Welcome back, {{ current_user.name }}!</h1>
+                <div class="user-meta-row">
+                    <span class="id-pill" onclick="copyUserId('{{ current_user.code }}')" title="Click to copy User ID">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                        ID: {{ current_user.code }}
+                    </span>
+                    <span class="user-email-text">{{ current_user.email }}</span>
+                </div>
+            </div>
         </div>
-        {% else %}
-        <div class="empty-state">
-            <div class="empty-icon">▦</div>
-            <h3>No profiles yet</h3>
-            <p>Create your first profile to generate a unique QR code.</p>
-            <a href="{{ url_for('create_profile') }}" class="btn">Get Started</a>
-        </div>
-        {% endif %}
-    </main>
 
-    <footer>Universal QR Identity System · Built with Flask and SQLite</footer>
-</body>
-</html>
+        <div class="hero-actions">
+            <a href="{{ url_for('create_profile') }}" class="btn btn-primary">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                Create New QR
+            </a>
+            <a href="{{ url_for('scan_qr') }}" class="btn btn-secondary" style="background: rgba(255,255,255,0.15); color: #fff; border-color: rgba(255,255,255,0.3);">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+                Scan QR Code
+            </a>
+            <a href="{{ url_for('settings') }}" class="btn btn-secondary" style="background: rgba(255,255,255,0.15); color: #fff; border-color: rgba(255,255,255,0.3);" title="Edit Profile & Settings">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- Quick Stats Row -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon indigo">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+        </div>
+        <div class="stat-info">
+            <div class="stat-number">{{ profiles|length }}</div>
+            <div class="stat-label">Total QR Profiles</div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon cyan">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path><line x1="4" y1="22" x2="4" y2="15"></line></svg>
+        </div>
+        <div class="stat-info">
+            <div class="stat-number">{{ categories_count }}</div>
+            <div class="stat-label">Active Categories</div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon emerald">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+        </div>
+        <div class="stat-info">
+            <div class="stat-number">100%</div>
+            <div class="stat-label">System Operational</div>
+        </div>
+    </div>
+</div>
+
+<!-- Controls: Search & Category Filter -->
+<div class="dashboard-controls">
+    <div class="search-box">
+        <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        <input type="text" id="profileSearchInput" placeholder="Search profiles by name or keyword..." oninput="filterProfiles()">
+    </div>
+
+    <div class="category-filter-chips">
+        <button type="button" class="filter-chip active" onclick="setCategoryFilter('all', this)">All</button>
+        <button type="button" class="filter-chip" onclick="setCategoryFilter('Human', this)">Human</button>
+        <button type="button" class="filter-chip" onclick="setCategoryFilter('Animal', this)">Animal / Pet</button>
+        <button type="button" class="filter-chip" onclick="setCategoryFilter('Tree / Plant', this)">Tree / Plant</button>
+        <button type="button" class="filter-chip" onclick="setCategoryFilter('Vehicle', this)">Vehicle</button>
+        <button type="button" class="filter-chip" onclick="setCategoryFilter('Object', this)">Object</button>
+        <button type="button" class="filter-chip" onclick="setCategoryFilter('Other', this)">Other</button>
+    </div>
+</div>
+
+<!-- Profiles Cards Grid -->
+{% if profiles %}
+    <div class="profile-grid" id="profilesContainer">
+        {% for profile in profiles %}
+            <div class="profile-card" data-name="{{ profile.name|lower }}" data-category="{{ profile.category }}">
+                <div class="card-header-image">
+                    <span class="category-badge-chip">{{ profile.category }}</span>
+                    {% if profile.photo %}
+                        <img class="card-photo" src="{{ url_for('static', filename=profile.photo) }}" alt="{{ profile.name }}">
+                    {% else %}
+                        <div class="card-placeholder-photo">
+                            <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="card-body">
+                    <h3>{{ profile.name }}</h3>
+                    <p class="card-description">{{ profile.description or 'Universal QR Digital Identity Profile' }}</p>
+                    <div class="card-footer-meta">
+                        <span>Created: {{ profile.created_at[:10] if profile.created_at else 'Recent' }}</span>
+                        <span style="font-family: var(--font-mono); font-size: 11px;">#{{ profile.id[:8] }}</span>
+                    </div>
+                </div>
+
+                <div class="card-action-bar">
+                    <a href="{{ url_for('view_profile', profile_id=profile.id) }}" class="btn btn-secondary btn-sm" title="View Public Identity Card">
+                        View
+                    </a>
+                    <a href="{{ url_for('edit_profile', profile_id=profile.id) }}" class="btn btn-light btn-sm" title="Edit Profile Details">
+                        Edit
+                    </a>
+                    <a href="{{ url_for('static', filename=profile.qr_code) }}" download="{{ profile.name|replace(' ', '_') }}_QR.png" class="btn btn-light btn-sm btn-icon" title="Download QR Code">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                    </a>
+                    <form method="POST" action="{{ url_for('delete_profile', profile_id=profile.id) }}" onsubmit="return confirm('Are you sure you want to delete profile {{ profile.name }}? This action cannot be undone.');" style="display:inline;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                        <button type="submit" class="btn btn-light btn-sm btn-icon text-danger" title="Delete Profile" style="color: var(--danger);">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="empty-state">
+        <div class="empty-state-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+        </div>
+        <h3>No QR Profiles Created Yet</h3>
+        <p>Give a unique digital identity to a human, animal, plant, vehicle, or product. Generate a scannable QR code in seconds.</p>
+        <a href="{{ url_for('create_profile') }}" class="btn btn-primary btn-lg">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            Create Your First QR Profile
+        </a>
+    </div>
+{% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    function copyUserId(code) {
+        navigator.clipboard.writeText(code).then(() => {
+            alert('User ID ' + code + ' copied to clipboard!');
+        }).catch(() => {
+            prompt('Copy your User ID:', code);
+        });
+    }
+
+    let activeCategory = 'all';
+
+    function setCategoryFilter(cat, btn) {
+        activeCategory = cat.toLowerCase();
+        document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+        btn.classList.add('active');
+        filterProfiles();
+    }
+
+    function filterProfiles() {
+        const query = document.getElementById('profileSearchInput').value.toLowerCase().trim();
+        const cards = document.querySelectorAll('.profile-card');
+        
+        cards.forEach(card => {
+            const name = card.getAttribute('data-name') || '';
+            const category = (card.getAttribute('data-category') || '').toLowerCase();
+            
+            const matchesQuery = !query || name.includes(query) || category.includes(query);
+            const matchesCat = (activeCategory === 'all') || category.includes(activeCategory);
+            
+            if (matchesQuery && matchesCat) {
+                card.style.display = 'flex';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    }
+</script>
+{% endblock %}
