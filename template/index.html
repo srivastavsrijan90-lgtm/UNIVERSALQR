@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Universal QR Identity</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <header class="navbar">
+        <a href="{{ url_for('index') }}" class="brand">QR<span>Identity</span></a>
+        <a href="{{ url_for('create_profile') }}" class="btn">+ Create Profile</a>
+    </header>
+
+    <main class="container">
+        <section class="hero">
+            <p class="eyebrow">ONE QR · UNLIMITED POSSIBILITIES</p>
+            <h1>Everything has a <span>digital identity.</span></h1>
+            <p>Create a profile for a person, animal, tree, vehicle or any object.
+               Generate a QR code and access its information with a scan.</p>
+            <a href="{{ url_for('create_profile') }}" class="btn">Create Your First Profile →</a>
+        </section>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category, message in messages %}
+                <div class="alert {{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endwith %}
+
+        <section class="section-heading">
+            <div>
+                <h2>Your Profiles</h2>
+                <p>All your created digital identities in one place.</p>
+            </div>
+            <span class="count">{{ profiles|length }} profiles</span>
+        </section>
+
+        {% if profiles %}
+        <div class="profile-grid">
+            {% for profile in profiles %}
+            <a class="profile-card" href="{{ url_for('view_profile', profile_id=profile['id']) }}">
+                {% if profile['photo'] %}
+                    <img class="card-photo"
+                         src="{{ url_for('static', filename=profile['photo']) }}"
+                         alt="{{ profile['name'] }}">
+                {% else %}
+                    <div class="card-placeholder">QR</div>
+                {% endif %}
+                <div class="card-content">
+                    <span class="category">{{ profile['category'] }}</span>
+                    <h3>{{ profile['name'] }}</h3>
+                    <p>{{ profile['description'] or 'Digital identity profile' }}</p>
+                    <span class="view-link">View profile →</span>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-icon">▦</div>
+            <h3>No profiles yet</h3>
+            <p>Create your first profile to generate a unique QR code.</p>
+            <a href="{{ url_for('create_profile') }}" class="btn">Get Started</a>
+        </div>
+        {% endif %}
+    </main>
+
+    <footer>Universal QR Identity System · Built with Flask and SQLite</footer>
+</body>
+</html>

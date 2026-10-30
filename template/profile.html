@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ profile.name }} | QR Identity</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <header class="navbar">
+        <a href="{{ url_for('index') }}" class="brand">QR<span>Identity</span></a>
+        <a href="{{ url_for('index') }}" class="text-link">← All Profiles</a>
+    </header>
+
+    <main class="profile-container">
+        <section class="profile-top">
+            <div class="profile-main">
+                {% if profile.photo %}
+                    <img class="profile-photo"
+                         src="{{ url_for('static', filename=profile.photo) }}"
+                         alt="{{ profile.name }}">
+                {% else %}
+                    <div class="profile-photo-placeholder">QR</div>
+                {% endif %}
+
+                <span class="category">{{ profile.category }}</span>
+                <h1>{{ profile.name }}</h1>
+                <p>{{ profile.description or 'Digital identity profile' }}</p>
+            </div>
+
+            <div class="qr-card">
+                <h3>Unique QR Code</h3>
+                <img class="qr-image"
+                     src="{{ url_for('static', filename=profile.qr_code) }}"
+                     alt="QR code for {{ profile.name }}">
+                <p>Scan to open this digital profile.</p>
+                <a class="btn" href="{{ url_for('static', filename=profile.qr_code) }}"
+                   download="profile-qr.png">Download QR Code</a>
+            </div>
+        </section>
+
+        <section class="details-card">
+            <h2>Profile Information</h2>
+
+            <div class="detail-row">
+                <span>Profile ID</span>
+                <span class="profile-id">{{ profile.id }}</span>
+            </div>
+
+            <div class="detail-row">
+                <span>Category</span>
+                <strong>{{ profile.category }}</strong>
+            </div>
+
+            {% for field in profile.custom_fields %}
+            <div class="detail-row">
+                <span>{{ field.name }}</span>
+                <strong>{{ field.value }}</strong>
+            </div>
+            {% endfor %}
+
+            <div class="detail-row">
+                <span>Created</span>
+                <strong>{{ profile.created_at }}</strong>
+            </div>
+        </section>
+
+        <div class="profile-actions">
+            <a href="{{ url_for('create_profile') }}" class="btn">+ Create Another Profile</a>
+            <a href="{{ url_for('index') }}" class="btn btn-light">Back to Home</a>
+        </div>
+    </main>
+
+    <footer>Universal QR Identity System</footer>
+</body>
+</html>

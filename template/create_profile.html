@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Profile | QR Identity</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <header class="navbar">
+        <a href="{{ url_for('index') }}" class="brand">QR<span>Identity</span></a>
+        <a href="{{ url_for('index') }}" class="text-link">← Back Home</a>
+    </header>
+
+    <main class="form-container">
+        <div class="page-intro">
+            <p class="eyebrow">CREATE A NEW IDENTITY</p>
+            <h1>Build a <span>digital profile.</span></h1>
+            <p>Enter the details below. Your QR code will be generated automatically.</p>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category, message in messages %}
+                <div class="alert {{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endwith %}
+
+        <form method="POST" enctype="multipart/form-data" class="form-card">
+            <label for="name">Name / Title *</label>
+            <input id="name" name="name" type="text"
+                   placeholder="e.g. Mango Tree, Bruno, My Vehicle" required>
+
+            <label for="category">Category *</label>
+            <select id="category" name="category" required>
+                <option value="">Choose a category</option>
+                <option>Human</option>
+                <option>Animal</option>
+                <option>Tree / Plant</option>
+                <option>Vehicle</option>
+                <option>Object / Machine</option>
+                <option>Other</option>
+            </select>
+
+            <label for="description">Short Description</label>
+            <textarea id="description" name="description" rows="3"
+                      placeholder="Describe this identity..."></textarea>
+
+            <label for="photo">Profile Photo</label>
+            <input id="photo" name="photo" type="file"
+                   accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp">
+            <p class="help-text">Optional. PNG, JPG, JPEG or WEBP.</p>
+
+            <div class="field-section">
+                <div class="field-header">
+                    <div>
+                        <h3>Custom Information</h3>
+                        <p>Add details specific to this profile.</p>
+                    </div>
+                    <button type="button" id="add-field" class="btn btn-light">+ Add Field</button>
+                </div>
+
+                <div id="custom-fields"></div>
+            </div>
+
+            <button type="submit" class="btn submit-btn">Create Profile & Generate QR →</button>
+        </form>
+    </main>
+
+    <script>
+        const fieldsContainer = document.getElementById("custom-fields");
+        const addFieldButton = document.getElementById("add-field");
+
+        function addField() {
+            const row = document.createElement("div");
+            row.className = "custom-field-row";
+
+            const nameInput = document.createElement("input");
+            nameInput.name = "field_name[]";
+            nameInput.placeholder = "Field name (e.g. Owner)";
+            nameInput.maxLength = 100;
+
+            const valueInput = document.createElement("input");
+            valueInput.name = "field_value[]";
+            valueInput.placeholder = "Value (e.g. Rahul)";
+            valueInput.maxLength = 1000;
+
+            const removeButton = document.createElement("button");
+            removeButton.type = "button";
+            removeButton.className = "remove-field";
+            removeButton.textContent = "×";
+            removeButton.setAttribute("aria-label", "Remove field");
+            removeButton.addEventListener("click", () => row.remove());
+
+            row.append(nameInput, valueInput, removeButton);
+            fieldsContainer.appendChild(row);
+        }
+
+        addFieldButton.addEventListener("click", addField);
+        addField();
+    </script>
+</body>
+</html>
