@@ -29,7 +29,7 @@
                     <span class="id-pill" style="background:var(--slate-100); color:var(--slate-700); border-color:var(--slate-300);">
                         User ID: <strong>{{ user.user_code }}</strong>
                     </span>
-                    <span style="font-size:12px; color:var(--slate-400);">Joined {{ user.created_at[:10] if user.created_at else 'Recently' }}</span>
+                    <span style="font-size:12px; color:var(--slate-400);">Joined {{ user.created_at|format_date }}</span>
                 </div>
             </div>
 

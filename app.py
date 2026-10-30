@@ -98,6 +98,24 @@ def verify_csrf():
             # We log warning but allow graceful continuation if session expired
 
 
+@app.template_filter("format_date")
+def format_date_filter(val):
+    if not val:
+        return "Recent"
+    if hasattr(val, "strftime"):
+        return val.strftime("%Y-%m-%d")
+    return str(val)[:10]
+
+
+@app.template_filter("format_datetime")
+def format_datetime_filter(val):
+    if not val:
+        return "Recent"
+    if hasattr(val, "strftime"):
+        return val.strftime("%Y-%m-%d %H:%M")
+    return str(val)[:16]
+
+
 @app.context_processor
 def inject_template_globals():
     current_user = None

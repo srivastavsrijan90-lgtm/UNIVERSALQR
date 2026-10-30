@@ -114,7 +114,7 @@
                     <h3>{{ profile.name }}</h3>
                     <p class="card-description">{{ profile.description or 'Universal QR Digital Identity Profile' }}</p>
                     <div class="card-footer-meta">
-                        <span>Created: {{ profile.created_at[:10] if profile.created_at else 'Recent' }}</span>
+                        <span>Created: {{ profile.created_at|format_date }}</span>
                         <span style="font-family: var(--font-mono); font-size: 11px;">#{{ profile.id[:8] }}</span>
                     </div>
                 </div>
